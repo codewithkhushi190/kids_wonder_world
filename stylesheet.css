@@ -1,256 +1,164 @@
-const bgMusic = new Audio("/static/bg-music2.mp3");
-    bgMusic.loop = true;
-    bgMusic.volume = 0.3;
-
-const clickSound = new Audio("/static/click.mp3");
-
-let isMuted = false; 
-
-    function toggleMute() {
-        isMuted = !isMuted; 
-        
-       
-        bgMusic.muted = isMuted;
-        clickSound.muted = isMuted;
-
-        const muteBtn = document.getElementById('mute-btn');
-        
-        
-        if (isMuted) {
-            muteBtn.innerText = "🔇"; 
-        } else {
-            muteBtn.innerText = "🔊"; 
-            
-           
-            if (bgMusic.paused) {
-                bgMusic.play().catch(e => console.log("Audio error: ", e));
-            }
-        }
-    }
-    
-    function playClickSound() {
-        clickSound.currentTime = 0;
-        clickSound.play().catch(e => console.log("Audio error: ", e));
-        clickSound.volume = 0.2;
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        const buttons = document.querySelectorAll('.btn, .mode-box, .profile-icon, .back-btn');
-        buttons.forEach(btn => {
-            btn.addEventListener('click', playClickSound);
-        });
-    });
-
-    function startMusic() {
-        if (bgMusic.paused) {
-            bgMusic.play().catch(e => console.log("Audio error: ", e));
-        }
-    }
-
-
-    let currentUser = "";
-    let currentMode = "";
-    let currentLevel = 0;
-    let solvedCount = 0;
-
-    // to unlockd lavel
-    let unlockedLevels = {
-    simple: 0,
-    moderate: 0,
-    difficult: 0
-};
-
-    const gameData = {
-       simple: [
-            { q: "Count the Apples!", v: "🍎🍎🍎", o: ["2", "3", "4"], a: "3", h: "Count them one by one!" },
-            { q: "Which one is BIG?", v: "🐭 🐘", o: ["Mouse", "Elephant"], a: "Elephant", h: "The elephant is very large!" },
-            { q: "What color is the Sun?", v: "☀️", o: ["Yellow", "Blue"], a: "Yellow", h: "Look at the bright yellow sun!" },
-            { q: "How many legs does a dog have?", v: "🐶", o: ["2", "4", "6"], a: "4", h: "1, 2, 3, 4!" },
-            { q: "Which one lives in water?", v: "🐱 🐟", o: ["Cat", "Fish"], a: "Fish", h: "Fish need water to swim!" },
-            { q: "Find the Circle!", v: "🔺 🔴 🟦", o: ["Red", "Blue", "Green"], a: "Red", h: "The red one is round!" },
-            { q: "One more than 1 is?", v: "☝️", o: ["2", "3"], a: "2", h: "Add one finger!" },
-            { q: "Which is a fruit?", v: "🥕 🍎", o: ["Carrot", "Apple"], a: "Apple", h: "Apples grow on trees!" },
-            { q: "Match the baby!", v: "🐮 (Cow)", o: ["Calf", "Puppy"], a: "Calf", h: "A baby cow is a calf!" },
-            { q: "How many stars?", v: "⭐ ⭐ ⭐ ⭐ ⭐", o: ["4", "5", "6"], a: "5", h: "Count carefully!" }
-        ],
-        moderate: [
-            { q: "2 + 3 = ?", v: "🔢", o: ["4", "5", "6"], a: "5", h: "Use your fingers: 2 then 3 more!" },
-            { q: "Which is heavier?", v: "🧱 🎈", o: ["Brick", "Balloon"], a: "Brick", h: "A brick is hard and heavy!" },
-            { q: "Spelling: C _ T", v: "🐱", o: ["A", "O", "E"], a: "A", h: "C-A-T spells Cat!" },
-            { q: "Which animal is tall?", v: "🐒 🦒", o: ["Monkey", "Giraffe"], a: "Giraffe", h: "Giraffes have long necks!" },
-            { q: "What comes next? 2, 4, 6, _", v: "🔢", o: ["7", "8", "10"], a: "8", h: "Skip counting by 2s!" },
-            { q: "Find the Triangle!", v: "📐", o: ["3 corners", "4 corners"], a: "3 corners", h: "Triangles have 3 sides!" },
-            { q: "Opposite of Cold?", v: "❄️", o: ["Hot", "Soft"], a: "Hot", h: "Ice is cold, Fire is...?" },
-            { q: "How many wheels on a car?", v: "🚗", o: ["2", "4", "3"], a: "4", h: "Two in front, two in back!" },
-            { q: "Which is a bird?", v: "🦅 🐕", o: ["Eagle", "Dog"], a: "Eagle", h: "Eagles can fly high!" },
-            { q: "Half of 4 is?", v: "🍎🍎 | 🍎🍎", o: ["1", "2", "3"], a: "2", h: "Split 4 in two equal groups!" }
-        ],
-        difficult: [
-            { q: "10 - 4 = ?", v: "🔢", o: ["5", "6", "7"], a: "6", h: "Take 4 away from 10!" },
-            { q: "Spell the fruit:", v: "🍌", o: ["Banana", "Benana"], a: "Banana", h: "B-A-N-A-N-A!" },
-            { q: "Which planet is ours?", v: "🪐 🌍", o: ["Saturn", "Earth"], a: "Earth", h: "We live on the blue and green one!" },
-            { q: "3 x 2 = ?", v: "🍎🍎 + 🍎🍎 + 🍎🍎", o: ["5", "6", "8"], a: "6", h: "Three groups of two!" },
-            { q: "Capital of India?", v: "🇮🇳", o: ["Delhi", "Mumbai"], a: "Delhi", h: "It starts with D!" },
-            { q: "Which is a mammal?", v: "🐍 🐬", o: ["Snake", "Dolphin"], a: "Dolphin", h: "Dolphins breathe air!" },
-            { q: "Next in pattern: 🔴🔵🔴🔵_", v: "🎨", o: ["🔴", "🔵"], a: "🔴", h: "The pattern repeats!" },
-            { q: "How many minutes in an hour?", v: "⏰", o: ["50", "60"], a: "60", h: "The big hand goes around once!" },
-            { q: "Which has 8 legs?", v: "🐜 🕷️", o: ["Ant", "Spider"], a: "Spider", h: "Spiders are not insects!" },
-            { q: "Square root of 9?", v: "🔢", o: ["3", "4"], a: "3", h: "What number times itself is 9?" }
-        ]
-    };
-
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    // new: register function
-    async function handleRegister() {
-        const u = document.getElementById('reg-username').value;
-        const p = document.getElementById('reg-password').value;
-        if(!u || !p) return alert("name and password both are required!");
-        
-        try {
-            const res = await fetch('/api/register', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username: u, password: p})
-            });
-            const data = await res.json();
-            
-            if(res.ok) {
-                alert(data.message); // success message
-                showScreen('login'); // Registration ke baad login screen dikhayein
-            } else {
-                alert("Error: " + data.message);
-            }
-        } catch (e) {
-            alert("Dose not connect to server!");
-        }
-    }
-
-    // UPDATED: Login Function
-    async function handleLogin() {
-        const u = document.getElementById('username').value;
-        const p = document.getElementById('password').value;
-        if(!u || !p) return alert("Name aur password dono chahiye!");
-        
-        try {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username: u, password: p})
-            });
-            const data = await res.json();
-            console.log(data);
-            
-            if(res.ok) {
-                currentUser = data.username;
-                
-                // NAYA: Backend se aayi progress yahan save hogi
-                solvedCount = data.progress.score;
-                unlockedLevels.simple = data.progress.simple;
-                unlockedLevels.moderate = data.progress.moderate;
-                unlockedLevels.difficult = data.progress.difficult;
-                
-                showScreen('modes');
-            } else {
-                alert("Error: " + data.message);
-            }
-        } catch (e) {
-            alert("Server se connect nahi ho paya!");
-        }
-    }
-
-    function startMode(m) {
-    currentMode = m;
-    document.getElementById('mode-title').innerText = m.toUpperCase() + " Mode";
-    const grid = document.getElementById('level-grid');
-    grid.innerHTML = "";
-    
-    
-    for(let i = 0; i < gameData[currentMode].length; i++) {
-        if(i <= unlockedLevels[currentMode]) {
-          
-            grid.innerHTML += `<button class="btn" onclick="loadLevel(${i})">${i + 1}</button>`;
-        } else {
-            
-            grid.innerHTML += `<button class="btn" style="background: #bdc3c7; box-shadow: none; cursor: not-allowed;" disabled>🔒 ${i + 1}</button>`;
-        }
-    }
-    showScreen('levels');
+:root { 
+    --primary: #FF6B6B; 
+    --secondary: #4ECDC4; 
+    --accent: #FFE66D; 
 }
 
-    function loadLevel(idx) {
-        currentLevel = idx;
-        const data = gameData[currentMode][idx];
-        document.getElementById('game-question').innerText = data.q;
-        document.getElementById('game-visual').innerText = data.v;
-        const opts = document.getElementById('game-options');
-        opts.innerHTML = "";
-        data.o.forEach(opt => {
-            opts.innerHTML += `<button class="btn" onclick="checkAnswer('${opt}')">${opt}</button>`;
-        });
-        showScreen('game');
-    }
+body { 
+    font-family: 'Comic Sans MS', cursive; 
+    margin: 0; 
+    background: #f0faff; 
+    min-height: 50vh;
+    background-image: url("/static/image1.jpg");
+    background-size:cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    overflow-x: hidden; 
+}
 
-    function checkAnswer(choice) {
-        const data = gameData[currentMode][currentLevel];
-        if(choice === data.a) {
-            document.getElementById('win-popup').style.display = 'flex';
-            
-            // NAYA LOGIC: Score tabhi badhega jab NAYA level pass hoga
-            let levelChanged = false;
-            if(currentLevel === unlockedLevels[currentMode]) {
-                unlockedLevels[currentMode]++;
-                solvedCount++;
-                levelChanged = true;
-            }
-            
-            // Agar naya level khula hai toh Python ko update bhej do
-            if(levelChanged) {
-                fetch('/api/update_progress', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ mode: currentMode, level: unlockedLevels[currentMode] })
-                }).catch(e => console.log(e)); 
-            }
-            
-        } else {
-            document.getElementById('wrong-hint').innerText = "💡 Hint: " + data.h;
-            document.getElementById('wrong-popup').style.display = 'flex';
-        }
-    }
+.screen { 
+    display: none; 
+    height: 100vh; 
+    width: 100vw; 
+    text-align: center; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    position: relative; 
+}
 
-    function hideWin() {
-        document.getElementById('win-popup').style.display = 'none';
-        if(currentLevel < gameData[currentMode].length - 1) loadLevel(currentLevel + 1);
-        else showScreen('levels');
-    }
-    function hideWrong() {
-        document.getElementById('wrong-popup').style.display = 'none';
-    }    
+.active { 
+    display: flex; 
+}
 
-    function showDashboard() {
-        let badge = "";
 
-        if (solvedCount === 0) {
-            badge = "🥚 Newbie (Start playing!)";
-        } else if (solvedCount <= 10) {
-            badge = "🌱 Rookie Explorer";
-        } else if (solvedCount <= 20) {
-            badge = "🎖️ Junior Genius";
-        } else if (solvedCount <= 27) {
-            badge = "🚀 Super Scholar";
-        } else {
-            
-            badge = "👑 Wonder World Champion!";
-        }
+h1 { 
+    /* color: var(--primary);  */
+    color: #150ed4;
+    font-size: 3rem; 
+    text-shadow: 2px 2px #fff; 
+}
 
-        document.getElementById('user-details').innerHTML = `
-            <p>Explorer Name: <b>${currentUser}</b></p>
-            <p>Levels Mastered: <b>${solvedCount}</b></p>
-            <p>Current Badge: <b>${badge}</b></p>
-        `;
-        showScreen('dashboard');
-    }
+
+.btn { 
+    background: var(--secondary); 
+    border: none; 
+    padding: 20px 40px; 
+    border-radius: 50px; 
+    color: white; 
+    font-size: 1.5rem; 
+    cursor: pointer; 
+    margin: 10px; 
+    box-shadow: 0 5px #45b7af; 
+    transition: 0.2s; 
+}
+
+.btn:active { 
+    transform: translateY(3px); 
+    box-shadow: 0 2px #45b7af; 
+}
+
+input { 
+    padding: 15px; 
+    border-radius: 20px; 
+    border: 3px solid var(--secondary); 
+    font-size: 1.2rem; 
+    margin: 10px; 
+}
+
+
+.game-visual { 
+    font-size: 80px; 
+    margin: 20px; 
+    min-height: 150px; 
+}
+
+.profile-icon { 
+    position: absolute; 
+    top: 20px; 
+    right: 20px; 
+    font-size: 40px; 
+    cursor: pointer; 
+    background: white; 
+    border-radius: 50%; 
+    padding: 10px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+}
+
+.back-btn { 
+    position: absolute; 
+    bottom: 20px; 
+    left: 20px; 
+    background: #95a5a6; 
+    padding: 10px 20px; 
+    border-radius: 10px; 
+    color: white; 
+    cursor: pointer; 
+}
+
+
+.mode-box { 
+    width: 250px; 
+    height: 150px; 
+    margin: 10px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 2rem; 
+    color: white; 
+    border-radius: 20px; 
+    cursor: pointer; 
+}
+
+.simple { background: #2ecc71; } 
+.moderate { background: #f1c40f; } 
+.difficult { background: #e74c3c; }
+
+.win-popup { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,255,0,0.8); 
+    display: none; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 100; 
+    color: white; 
+}
+#wrong-popup {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(255, 99, 71, 0.9); 
+    display: none; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 100; 
+    color: white; 
+}
+
+
+.mute-btn { 
+    position: fixed; 
+    top: 20px; 
+    left: 20px; 
+    font-size: 40px; 
+    cursor: pointer; 
+    background: white; 
+    border-radius: 50%; 
+    padding: 10px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+    z-index: 1000; 
+    user-select: none;
+    transition: 0.2s;
+}
+
+.mute-btn:active {
+    transform: translateY(3px); 
+}
