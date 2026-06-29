@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kids Wonder World</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='stylesheet.css') }}">
+</head>
+<body>
+
+<div id="welcome" class="screen active">
+    <h1>🌈 Welcome to Wonder World! 🌈</h1>
+    <button class="btn" onclick="startMusic(); showScreen('login')">Let's Play! 🚀</button>
+    <button class="btn" style="background: #2ecc71;" onclick="showScreen('register')">New User? Register 📝</button>
+</div>
+
+<div id="register" class="screen">
+    <h1>Create Account 📝</h1>
+    <input type="text" id="reg-username" placeholder="Choose Your Name">
+    <input type="password" id="reg-password" placeholder="Create Secret Password">
+    <button class="btn" onclick="startMusic(); handleRegister()">Register! 🎈</button>
+    <div class="back-btn" onclick="showScreen('welcome')">⬅️ Back</div>
+</div>
+
+<div id="login" class="screen">
+    <h1>Welcome Back! 🤔</h1>
+    <input type="text" id="username" placeholder="Your Name">
+    <input type="password" id="password" placeholder="Secret Password">
+    <button class="btn" onclick="handleLogin()">Go! 🎈</button>
+    <div class="back-btn" onclick="showScreen('welcome')">⬅️ Back</div>
+</div>
+
+<div id="modes" class="screen">
+    <div class="profile-icon" onclick="showDashboard()">👤</div>
+    <h1>Pick a Challenge!</h1>
+    <div style="display: flex;">
+        <div class="mode-box simple" onclick="startMode('simple')">Simple 😊</div>
+        <div class="mode-box moderate" onclick="startMode('moderate')">Moderate 😎</div>
+        <div class="mode-box difficult" onclick="startMode('difficult')">Difficult 🧠</div>
+    </div>
+    <div class="back-btn" onclick="showScreen('welcome')">⬅️ Logout</div>
+</div>
+
+<div id="levels" class="screen">
+    <h1 id="mode-title">Levels</h1>
+    <div id="level-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;"></div>
+    <div class="back-btn" onclick="showScreen('modes')">⬅️ Back</div>
+</div>
+
+<div id="game" class="screen">
+    <div class="profile-icon" onclick="showDashboard()">👤</div>
+    <h2 id="game-question">Question?</h2>
+    <div id="game-visual" class="game-visual"></div>
+    <div id="game-options"></div>
+    <div class="back-btn" onclick="showScreen('levels')">⬅️ Back</div>
+</div>
+
+<div id="dashboard" class="screen">
+    <h1>My Progress 🏆</h1>
+    <div id="user-details" style="font-size: 1.5rem;"></div>
+    <button class="btn" onclick="showScreen('modes')">Back to Games</button>
+</div>
+
+<div id="win-popup" class="win-popup">
+    <h1>🌟 FANTASTIC! 🌟</h1>
+    <p style="font-size: 2rem;">You got it right! You are so smart!</p>
+    <button class="btn" onclick="hideWin()">Play Next Level ➡️</button>
+</div>
+
+<div id="wrong-popup" class="win-popup" >
+    <h1>Oops! Not quite right ❌</h1>
+    <p id="wrong-hint" style="font-size: 2rem; margin: 20px; text-align: center;"></p>
+    <button class="btn" onclick="hideWrong()">Try Again 🔄</button>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
