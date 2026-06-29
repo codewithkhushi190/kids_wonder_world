@@ -254,3 +254,4 @@ let isMuted = false;
         `;
         showScreen('dashboard');
     }
+    

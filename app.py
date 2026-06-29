@@ -1,17 +1,22 @@
 from flask import Flask, render_template, request, jsonify, session
+import os
 import psycopg2
-
 app = Flask(__name__)
-DB_CONFIG = {
-    "host": "localhost",
-    "database": "kids_game",
-    "user": "postgres",
-    "password": "210489",
-    "port": "5432"
-}
-
 def get_connection():
-    return psycopg2.connect(**DB_CONFIG)
+    database_url = os.getenv("DATABASE_URL")
+
+    if database_url:
+        # Render par
+        return psycopg2.connect(database_url)
+    else:
+        # Laptop par
+        return psycopg2.connect(
+            host="localhost",
+            database="kids_game",
+            user="postgres",
+            password="210489",
+            port="5432"
+        )
 app.secret_key = "super_secret_key_for_kids_game"
 
 def init_db():
